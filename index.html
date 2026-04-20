@@ -1,0 +1,539 @@
+<!-- <!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IdeaFlow Pro | Modern Brainstorming</title>
+    <style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --primary: #818cf8;
+            --accent: #f472b6;
+            --text: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
+                        url('https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&q=80&w=2070');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--text);
+            padding: 2rem;
+        }
+
+        /* Glass Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            animation: slideDown 0.8s ease;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #818cf8, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Input Area */
+        .input-panel {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 2rem;
+            border-radius: 24px;
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        input, select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px 20px;
+            color: white;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input::placeholder { color: rgba(255,255,255,0.6); }
+        input:focus { background: rgba(255,255,255,0.2); border-color: var(--primary); }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 0 20px rgba(129, 140, 248, 0.5);
+        }
+
+        /* Board Grid */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+
+        /* Dynamic Idea Card */
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            transition: 0.4s;
+            animation: fadeIn 0.6s ease forwards;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card:hover {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.02);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .category {
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: var(--accent);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .idea-content { font-size: 1.1rem; margin-bottom: 1.5rem; }
+
+        .card-footer {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-small { padding: 6px 12px; font-size: 0.8rem; background: rgba(255,255,255,0.1); }
+        .btn-delete { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.5); }
+        .btn-delete:hover { background: #ef4444; }
+
+        @keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .input-panel { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="logo">IDEAFLOW PRO</div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-small" onclick="clearAll()" style="background: rgba(255,255,255,0.1)">Clear Board</button>
+            <button onclick="exportData()">Download Report</button>
+        </div>
+    </header>
+
+    <div class="input-panel">
+        <input type="text" id="ideaInput" placeholder="What's your next big idea?">
+        <select id="catInput">
+            <option value="💡 Concept">💡 Concept</option>
+            <option value="🚀 Feature">🚀 Feature</option>
+            <option value="🎨 Design">🎨 Design</option>
+            <option value="🛠️ Fix">🛠️ Fix</option>
+        </select>
+        <button onclick="saveIdea()">Deploy Idea</button>
+    </div>
+
+    <div class="board" id="board">
+        </div>
+</div>
+
+<script>
+    let data = JSON.parse(localStorage.getItem('pro_ideas')) || [];
+
+    function saveIdea() {
+        const input = document.getElementById('ideaInput');
+        const cat = document.getElementById('catInput');
+        
+        if(!input.value.trim()) return;
+
+        const newIdea = {
+            id: Date.now(),
+            text: input.value,
+            category: cat.value,
+            votes: 0,
+            timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        };
+
+        data.push(newIdea);
+        input.value = '';
+        updateUI();
+    }
+
+    function updateUI() {
+        const board = document.getElementById('board');
+        board.innerHTML = '';
+
+        data.sort((a,b) => b.votes - a.votes).forEach(item => {
+            const el = document.createElement('div');
+            el.className = 'card';
+            el.innerHTML = `
+                <div>
+                    <div class="card-header">
+                        <span class="category">${item.category}</span>
+                        <span style="font-size: 0.7rem; opacity: 0.6">${item.timestamp}</span>
+                    </div>
+                    <div class="idea-content">${item.text}</div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-small" onclick="vote(${item.id})">▲ ${item.votes}</button>
+                    <button class="btn-small btn-delete" onclick="remove(${item.id})">Delete</button>
+                </div>
+            `;
+            board.appendChild(el);
+        });
+        localStorage.setItem('pro_ideas', JSON.stringify(data));
+    }
+
+    function vote(id) {
+        const idx = data.findIndex(i => i.id === id);
+        data[idx].votes++;
+        updateUI();
+    }
+
+    function remove(id) {
+        data = data.filter(i => i.id !== id);
+        updateUI();
+    }
+
+    function clearAll() {
+        if(confirm("Wipe the entire board?")) {
+            data = [];
+            updateUI();
+        }
+    }
+
+    function exportData() {
+        const text = data.map(i => `[${i.category}] (${i.votes} votes) - ${i.text}`).join('\n');
+        const blob = new Blob([text], {type: 'text/plain'});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = 'Brainstorm_Export.txt';
+        link.href = url;
+        link.click();
+    }
+
+    updateUI();
+</script>
+
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IdeaFlow Pro | Bright Ideas</title>
+    <style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.12);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --primary: #fcd34d; /* Light bulb yellow */
+            --secondary: #6366f1;
+            --accent: #f472b6;
+            --text: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
+                        url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=2072');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--text);
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* Logo and Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+        }
+
+        .bulb-logo {
+            width: 50px;
+            height: 50px;
+            filter: drop-shadow(0 0 8px var(--primary));
+            animation: pulse-glow 2s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            from { filter: drop-shadow(0 0 5px var(--primary)); transform: scale(1); }
+            to { filter: drop-shadow(0 0 20px var(--primary)); transform: scale(1.05); }
+        }
+
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            color: white;
+            text-transform: uppercase;
+        }
+
+        /* Input Glass Panel */
+        .input-panel {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            padding: 1.5rem;
+            border-radius: 20px;
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        input, select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px 18px;
+            color: white;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus { 
+            background: rgba(255, 255, 255, 0.15); 
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(252, 211, 77, 0.3);
+        }
+
+        select option { background: #1e293b; }
+
+        button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.2);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Board Cards */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            transition: 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.18);
+            border-color: var(--primary);
+        }
+
+        .cat-badge {
+            font-size: 0.65rem;
+            padding: 4px 10px;
+            border-radius: 50px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--glass-border);
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .idea-text {
+            font-size: 1.15rem;
+            margin: 1.5rem 0;
+            line-height: 1.4;
+        }
+
+        .card-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .vote-btn {
+            background: rgba(252, 211, 77, 0.15);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 5px 15px;
+            border-radius: 8px;
+        }
+
+        .vote-btn:hover { background: var(--primary); color: #000; }
+
+        .btn-del { 
+            background: transparent; 
+            color: #ff4d4d; 
+            font-size: 0.8rem;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="logo-container">
+            <img src="https://cdn-icons-png.flaticon.com/512/702/702797.png" alt="Bulb Logo" class="bulb-logo">
+            <span class="logo-text">IdeaFlow</span>
+        </div>
+        <button onclick="exportData()" style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);">Download Log</button>
+    </header>
+
+    <div class="input-panel">
+        <input type="text" id="ideaInput" placeholder="Got a bright idea? Share it here...">
+        <select id="catInput">
+            <option value="💡 Concept">💡 Concept</option>
+            <option value="🚀 Growth">🚀 Growth</option>
+            <option value="🎨 Creative">🎨 Creative</option>
+            <option value="🛠️ Technical">🛠️ Technical</option>
+        </select>
+        <button onclick="saveIdea()">Ignite Idea</button>
+    </div>
+
+    <div id="board" class="board"></div>
+</div>
+
+<script>
+    let storage = JSON.parse(localStorage.getItem('bulb_ideas')) || [];
+
+    function saveIdea() {
+        const txt = document.getElementById('ideaInput');
+        const cat = document.getElementById('catInput');
+        if(!txt.value.trim()) return;
+
+        storage.push({
+            id: Date.now(),
+            text: txt.value,
+            category: cat.value,
+            votes: 0
+        });
+        txt.value = '';
+        render();
+    }
+
+    function render() {
+        const board = document.getElementById('board');
+        board.innerHTML = '';
+        storage.sort((a,b) => b.votes - a.votes).forEach(item => {
+            board.innerHTML += `
+                <div class="card">
+                    <span class="cat-badge">${item.category}</span>
+                    <p class="idea-text">${item.text}</p>
+                    <div class="card-actions">
+                        <button class="vote-btn" onclick="vote(${item.id})">Vote Up ${item.votes}</button>
+                        <button class="btn-del" onclick="del(${item.id})">Remove</button>
+                    </div>
+                </div>
+            `;
+        });
+        localStorage.setItem('bulb_ideas', JSON.stringify(storage));
+    }
+
+    function vote(id) {
+        const i = storage.findIndex(x => x.id === id);
+        storage[i].votes++;
+        render();
+    }
+
+    function del(id) {
+        storage = storage.filter(x => x.id !== id);
+        render();
+    }
+
+    function exportData() {
+        const output = storage.map(i => `${i.category}: ${i.text} (${i.votes} votes)`).join('\n');
+        const blob = new Blob([output], {type: 'text/plain'});
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'IdeaFlow_Report.txt';
+        link.click();
+    }
+
+    render();
+</script>
+
+</body>
+</html> -->
